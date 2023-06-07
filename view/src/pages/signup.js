@@ -8,7 +8,7 @@ import Grid from '@material-ui/core/Grid';
 import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
 import Typography from '@material-ui/core/Typography';
 import Container from '@material-ui/core/Container';
-import withStyles from '@material-ui/core/styles/withStyles';
+import WithStyles from '@material-ui/core/styles/withStyles';
 import CircularProgress from '@material-ui/core/CircularProgress';
 
 import axios from 'axios';
@@ -253,7 +253,7 @@ class Signup extends Component {
               Sign Up
               {loading && <CircularProgress size={30} className={classes.progess} />}
             </Button>
-            <Grid container justify="flex-end">
+            <Grid container justifyContent="flex-end">
               <Grid item>
                 <Link href="login" variant="body2">
                   Already have an account? Sign in
@@ -268,4 +268,4 @@ class Signup extends Component {
 }
 
 
-export default withStyles(styles)(Signup);
+export default WithStyles(styles)(Signup);

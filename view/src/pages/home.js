@@ -1,8 +1,9 @@
-import React, { Component } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 import Account from '../components/account';
-import Todo from '../components/meeting';
+import Meeting from '../components/meeting';
 
 import Drawer from '@material-ui/core/Drawer';
 import AppBar from '@material-ui/core/AppBar';
@@ -14,183 +15,160 @@ import Divider from '@material-ui/core/Divider';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
-import withStyles from '@material-ui/core/styles/withStyles';
 import AccountBoxIcon from '@material-ui/icons/AccountBox';
 import NotesIcon from '@material-ui/icons/Notes';
 import Avatar from '@material-ui/core/Avatar';
 import ExitToAppIcon from '@material-ui/icons/ExitToApp';
 import CircularProgress from '@material-ui/core/CircularProgress';
 
-import { authMiddleWare } from '../util/auth'
-
+import { authMiddleWare } from '../util/auth';
+import { makeStyles } from '@material-ui/core/styles';
 
 const drawerWidth = 240;
 
-const styles = (theme) => ({
-	root: {
-		display: 'flex'
-	},
-	appBar: {
-		zIndex: theme.zIndex.drawer + 1
-	},
-	drawer: {
-		width: drawerWidth,
-		flexShrink: 0
-	},
-	drawerPaper: {
-		width: drawerWidth
-	},
-	content: {
-		flexGrow: 1,
-		padding: theme.spacing(3)
-	},
-	avatar: {
-		height: 110,
-		width: 100,
-		flexShrink: 0,
-		flexGrow: 0,
-		marginTop: 20
-	},
-	uiProgess: {
-		position: 'fixed',
-		zIndex: '1000',
-		height: '31px',
-		width: '31px',
-		left: '50%',
-		top: '35%'
-	},
-	toolbar: theme.mixins.toolbar
-});
+const useStyles = makeStyles((theme) => ({
+  root: {
+    display: 'flex'
+  },
+  appBar: {
+    zIndex: theme.zIndex.drawer + 1
+  },
+  drawer: {
+    width: drawerWidth,
+    flexShrink: 0
+  },
+  drawerPaper: {
+    width: drawerWidth
+  },
+  content: {
+    flexGrow: 1,
+    padding: theme.spacing(3)
+  },
+  avatar: {
+    height: 110,
+    width: 100,
+    flexShrink: 0,
+    flexGrow: 0,
+    marginTop: 20
+  },
+  uiProgress: {
+    position: 'fixed',
+    zIndex: '1000',
+    height: '31px',
+    width: '31px',
+    left: '50%',
+    top: '35%'
+  },
+  toolbar: theme.mixins.toolbar
+}));
 
+const Home = () => {
+  const classes = useStyles();
+  const navigate = useNavigate();
+  const [render, setRender] = useState(false);
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [profilePicture, setProfilePicture] = useState('');
+  const [uiLoading, setUiLoading] = useState(true);
+  const [imageLoading, setImageLoading] = useState(false);
 
+  const loadAccountPage = () => {
+    setRender(true);
+  };
 
-class Home extends Component {
-	state = {
-		render: false
-	};
+  const loadMeetingPage = () => {
+    setRender(false);
+  };
 
-	loadAccountPage = (event) => {
-		this.setState({ render: true });
-	};
+  const logoutHandler = () => {
+    localStorage.removeItem('AuthToken');
+    navigate('/login');
+  };
 
-	loadTodoPage = (event) => {
-		this.setState({ render: false });
-	};
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const authToken = localStorage.getItem('AuthToken');
+        axios.defaults.headers.common = { Authorization: `${authToken}` };
+        const response = await axios.get('/user');
+        const userCredentials = response.data.userCredentials;
+        
+        authMiddleWare(navigate);
+        setFirstName(userCredentials.firstName);
+        setLastName(userCredentials.lastName);
+        setProfilePicture(userCredentials.imageUrl);
+        setUiLoading(false);
+      } catch (error) {
+        if (error.response && error.response.status === 403) {
+          navigate('/login');
+        } else {
+          console.log(error);
+          // handle other errors
+        }
+      }
+    };
+  
+    fetchData();
+  }, [navigate]);
 
-	logoutHandler = (event) => {
-		localStorage.removeItem('AuthToken');
-		this.props.history.push('/login');
-	};
+  if (uiLoading === true) {
+    return (
+      <div className={classes.root}>
+        {uiLoading && <CircularProgress size={150} className={classes.uiProgress} />}
+      </div>
+    );
+  } else {
+    return (
+      <div className={classes.root}>
+        <CssBaseline />
+        <AppBar position="fixed" className={classes.appBar}>
+          <Toolbar>
+            <Typography variant="h6" noWrap>
+              Ontomo
+            </Typography>
+          </Toolbar>
+        </AppBar>
+        <Drawer
+          className={classes.drawer}
+          variant="permanent"
+          classes={{
+            paper: classes.drawerPaper
+          }}
+        >
+          <div className={classes.toolbar} />
+          <Divider />
+          <center>
+            <Avatar src={profilePicture} className={classes.avatar} />
+            <p>
+              {firstName} {lastName}
+            </p>
+          </center>
+          <Divider />
+          <List>
+            <ListItem button key="Meeting" onClick={loadMeetingPage}>
+              <ListItemIcon>
+                <NotesIcon />
+              </ListItemIcon>
+              <ListItemText primary="Meeting" />
+            </ListItem>
+            <ListItem button key="Account" onClick={loadAccountPage}>
+              <ListItemIcon>
+                <AccountBoxIcon />
+              </ListItemIcon>
+              <ListItemText primary="Account" />
+            </ListItem>
+            <ListItem button key="Logout" onClick={logoutHandler}>
+              <ListItemIcon>
+                <ExitToAppIcon />
+              </ListItemIcon>
+              <ListItemText primary="Logout" />
+            </ListItem>
+          </List>
+        </Drawer>
+        <div>{render ? <Account /> : <Meeting />}</div>
+      </div>
+    );
+  }
+};
 
-	constructor(props) {
-		super(props);
-
-		this.state = {
-			firstName: '',
-			lastName: '',
-			profilePicture: '',
-			uiLoading: true,
-			imageLoading: false
-		};
-	}
-
-	componentWillMount = () => {
-		authMiddleWare(this.props.history);
-		const authToken = localStorage.getItem('AuthToken');
-		axios.defaults.headers.common = { Authorization: `${authToken}` };
-		axios
-			.get('/user')
-			.then((response) => {
-				console.log(response.data);
-				this.setState({
-					firstName: response.data.userCredentials.firstName,
-					lastName: response.data.userCredentials.lastName,
-					email: response.data.userCredentials.email,
-					phoneNumber: response.data.userCredentials.phoneNumber,
-					country: response.data.userCredentials.country,
-					username: response.data.userCredentials.username,
-					uiLoading: false,
-					profilePicture: response.data.userCredentials.imageUrl
-				});
-			})
-			.catch((error) => {
-				if(error.response.status === 403) {
-					this.props.history.push('/login')
-				}
-				console.log(error);
-				this.setState({ errorMsg: 'Error in retrieving the data' });
-			});
-	};
-
-	render() {
-		const { classes } = this.props;		
-		if (this.state.uiLoading === true) {
-			return (
-				<div className={classes.root}>
-					{this.state.uiLoading && <CircularProgress size={150} className={classes.uiProgess} />}
-				</div>
-			);
-		} else {
-			return (
-				<div className={classes.root}>
-					<CssBaseline />
-					<AppBar position="fixed" className={classes.appBar}>
-						<Toolbar>
-							<Typography variant="h6" noWrap>
-								Ontomo
-							</Typography>
-						</Toolbar>
-					</AppBar>
-					<Drawer
-						className={classes.drawer}
-						variant="permanent"
-						classes={{
-							paper: classes.drawerPaper
-						}}
-					>
-						<div className={classes.toolbar} />
-						<Divider />
-						<center>
-							<Avatar src={this.state.profilePicture} className={classes.avatar} />
-							<p>
-								{' '}
-								{this.state.firstName} {this.state.lastName}
-							</p>
-						</center>
-						<Divider />
-						<List>
-							<ListItem button key="Todo" onClick={this.loadTodoPage}>
-								<ListItemIcon>
-									{' '}
-									<NotesIcon />{' '}
-								</ListItemIcon>
-								<ListItemText primary="Todo" />
-							</ListItem>
-
-							<ListItem button key="Account" onClick={this.loadAccountPage}>
-								<ListItemIcon>
-									{' '}
-									<AccountBoxIcon />{' '}
-								</ListItemIcon>
-								<ListItemText primary="Account" />
-							</ListItem>
-
-							<ListItem button key="Logout" onClick={this.logoutHandler}>
-								<ListItemIcon>
-									{' '}
-									<ExitToAppIcon />{' '}
-								</ListItemIcon>
-								<ListItemText primary="Logout" />
-							</ListItem>
-						</List>
-					</Drawer>
-
-					<div>{this.state.render ? <Account /> : <Todo />}</div>
-				</div>
-			);
-		}
-	}
-}
-
-
-export default withStyles(styles)(Home);
+export default Home;
