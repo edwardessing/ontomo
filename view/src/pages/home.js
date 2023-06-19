@@ -66,11 +66,9 @@ const Home = () => {
   const classes = useStyles();
   const navigate = useNavigate();
   const [render, setRender] = useState(false);
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [schoolName, setSchoolName] = useState('');
   const [profilePicture, setProfilePicture] = useState('');
   const [uiLoading, setUiLoading] = useState(true);
-  const [imageLoading, setImageLoading] = useState(false);
 
   const loadAccountPage = () => {
     setRender(true);
@@ -94,8 +92,7 @@ const Home = () => {
         const userCredentials = response.data.userCredentials;
         
         authMiddleWare(navigate);
-        setFirstName(userCredentials.firstName);
-        setLastName(userCredentials.lastName);
+        setSchoolName(userCredentials.schoolName);
         setProfilePicture(userCredentials.imageUrl);
         setUiLoading(false);
       } catch (error) {
@@ -138,9 +135,9 @@ const Home = () => {
           <div className={classes.toolbar} />
           <Divider />
           <center>
-            <Avatar src={profilePicture} className={classes.avatar} />
+            <Avatar src={profilePicture} className={classes.avatar} variant="square" />
             <p>
-              {firstName} {lastName}
+              {schoolName}
             </p>
           </center>
           <Divider />

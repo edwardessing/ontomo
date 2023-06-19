@@ -4,7 +4,6 @@ const auth = require('./util/auth');
 
 const app = express();
 
-
 // meetings
 const {
     getAllMeetings,
@@ -24,6 +23,12 @@ const {
 } = require('./api/users')
 
 
+// whereby
+const {
+  createRoom
+} = require('./api/whereby')
+
+
 // meeting routes
 app.get('/meetings', auth, getAllMeetings);
 app.post('/meeting', auth, postOneMeeting);
@@ -37,6 +42,10 @@ app.post('/signup', signUpUser);
 app.post('/user/image', auth, uploadProfilePhoto);
 app.get('/user', auth, getUserDetail);
 app.post('/user', auth, updateUserDetails);
+
+
+// whereby routes
+app.post('/create-room', createRoom)
 
 
 exports.api = functions.https.onRequest(app);

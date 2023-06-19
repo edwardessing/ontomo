@@ -39,14 +39,10 @@ exports.loginUser = (request, response) => {
 // Signup
 exports.signUpUser = (request, response) => {
   const newUser = {
-    firstName: request.body.firstName,
-    lastName: request.body.lastName,
+    schoolName: request.body.schoolName,
     email: request.body.email,
-    phoneNumber: request.body.phoneNumber,
-    country: request.body.country,
     password: request.body.password,
     confirmPassword: request.body.confirmPassword,
-    username: request.body.username
   };
 
   const { valid, errors } = validateSignUpData(newUser);
@@ -55,11 +51,11 @@ exports.signUpUser = (request, response) => {
 
   let token, userId;
   db
-    .doc(`/users/${newUser.username}`)
+    .doc(`/users/${newUser.email}`)
     .get()
     .then((doc) => {
       if (doc.exists) {
-        return response.status(400).json({ username: 'this username is already taken' });
+        return response.status(400).json({ email: 'Email already in use.' });
       } else {
         return firebase
           .auth()
@@ -76,17 +72,13 @@ exports.signUpUser = (request, response) => {
     .then((idtoken) => {
       token = idtoken;
       const userCredentials = {
-        firstName: newUser.firstName,
-        lastName: newUser.lastName,
-        username: newUser.username,
-        phoneNumber: newUser.phoneNumber,
-        country: newUser.country,
+        schoolName: newUser.schoolName,
         email: newUser.email,
         createdAt: new Date().toISOString(),
         userId
       };
       return db
-        .doc(`/users/${newUser.username}`)
+        .doc(`/users/${newUser.email}`)
         .set(userCredentials);
     })
     .then(() => {
@@ -95,9 +87,9 @@ exports.signUpUser = (request, response) => {
     .catch((err) => {
       console.error(err);
       if (err.code === 'auth/email-already-in-use') {
-        return response.status(400).json({ email: 'Email already in use' });
+        return response.status(400).json({ email: 'Email already in use.' });
       } else {
-        return response.status(500).json({ general: 'Something went wrong, please try again' });
+        return response.status(500).json({ general: 'Something went wrong, please try again.' });
       }
     });
 }
@@ -115,6 +107,7 @@ deleteImage = (imageName) => {
     })
 }
 
+
 // Upload profile picture
 exports.uploadProfilePhoto = (request, response) => {
   const BusBoy = require('busboy');
@@ -131,7 +124,7 @@ exports.uploadProfilePhoto = (request, response) => {
       return response.status(400).json({ error: 'Wrong file type submited' });
     }
     const imageExtension = filename.split('.')[filename.split('.').length - 1];
-    imageFileName = `${request.user.username}.${imageExtension}`;
+    imageFileName = `${request.user.email}.${imageExtension}`;
     const filePath = path.join(os.tmpdir(), imageFileName);
     imageToBeUploaded = { filePath, mimetype };
     file.pipe(fs.createWriteStream(filePath));
@@ -151,7 +144,7 @@ exports.uploadProfilePhoto = (request, response) => {
       })
       .then(() => {
         const imageUrl = `https://firebasestorage.googleapis.com/v0/b/${config.storageBucket}/o/${imageFileName}?alt=media`;
-        return db.doc(`/users/${request.user.username}`).update({
+        return db.doc(`/users/${request.user.email}`).update({
           imageUrl
         });
       })
@@ -167,11 +160,10 @@ exports.uploadProfilePhoto = (request, response) => {
 };
 
 
-
 exports.getUserDetail = (request, response) => {
   let userData = {};
   db
-    .doc(`/users/${request.user.username}`)
+    .doc(`/users/${request.user.email}`)
     .get()
     .then((doc) => {
       if (doc.exists) {
@@ -187,7 +179,7 @@ exports.getUserDetail = (request, response) => {
 
 
 exports.updateUserDetails = (request, response) => {
-  let document = db.collection('users').doc(`${request.user.username}`);
+  let document = db.collection('users').doc(`${request.user.email}`);
   document.update(request.body)
   .then(()=> {
       response.json({message: 'Updated successfully'});

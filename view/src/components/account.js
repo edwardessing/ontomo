@@ -70,12 +70,9 @@ const Account = () => {
   const navigate = useNavigate();
 
   const [user, setUser] = useState({
-    firstName: '',
-    lastName: '',
+    schoolName: '',
     email: '',
-    phoneNumber: '',
-    username: '',
-    country: '',
+    partnerSchools: [],
     profilePicture: '',
   });
   const [uiLoading, setUiLoading] = useState(true);
@@ -91,13 +88,11 @@ const Account = () => {
       .then((response) => {
         setUser((prevUser) => ({
           ...prevUser,
-          firstName: response.data.userCredentials.firstName,
-          lastName: response.data.userCredentials.lastName,
+          schoolName: response.data.userCredentials.schoolName,
           email: response.data.userCredentials.email,
-          phoneNumber: response.data.userCredentials.phoneNumber,
-          country: response.data.userCredentials.country,
-          username: response.data.userCredentials.username,
+          partnerSchools: response.data.userCredentials.partnerSchools
         }));
+
         setUiLoading(false);
       })
       .catch((error) => {
@@ -160,9 +155,7 @@ const Account = () => {
     const authToken = localStorage.getItem('AuthToken');
     axios.defaults.headers.common = { Authorization: `${authToken}` };
     const formRequest = {
-      firstName: user.firstName,
-      lastName: user.lastName,
-      country: user.country,
+      schoolName: user.schoolName
     };
     axios
       .post('/user', formRequest)
@@ -196,7 +189,7 @@ const Account = () => {
           <div className={classes.details}>
             <div>
               <Typography className={classes.locationText} gutterBottom variant="h4">
-                {user.firstName} {user.lastName}
+                {user.schoolName} {user.lastName}
               </Typography>
               <Button
                 variant="outlined"
@@ -229,29 +222,18 @@ const Account = () => {
           <Divider />
           <CardContent>
             <Grid container spacing={3}>
-              <Grid item md={6} xs={12}>
+              <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label="First name"
+                  label="School name"
                   margin="dense"
-                  name="firstName"
+                  name="schoolName"
                   variant="outlined"
-                  value={user.firstName}
+                  value={user.schoolName}
                   onChange={handleChange}
                 />
               </Grid>
-              <Grid item md={6} xs={12}>
-                <TextField
-                  fullWidth
-                  label="Last name"
-                  margin="dense"
-                  name="lastName"
-                  variant="outlined"
-                  value={user.lastName}
-                  onChange={handleChange}
-                />
-              </Grid>
-              <Grid item md={6} xs={12}>
+              <Grid item xs={12}>
                 <TextField
                   fullWidth
                   label="Email"
@@ -262,39 +244,18 @@ const Account = () => {
                   value={user.email}
                 />
               </Grid>
-              <Grid item md={6} xs={12}>
+              {user.partnerSchools ?
+              (<Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label="Phone Number"
+                  label="Partner Schools"
                   margin="dense"
-                  name="phoneNumber"
-                  variant="outlined"
-                  value={user.phoneNumber}
-                  onChange={handleChange}
-                />
-              </Grid>
-              <Grid item md={6} xs={12}>
-                <TextField
-                  fullWidth
-                  label="Username"
-                  margin="dense"
-                  name="username"
+                  name="partnerSchools"
                   variant="outlined"
                   disabled
-                  value={user.username}
-                />
-              </Grid>
-              <Grid item md={6} xs={12}>
-                <TextField
-                  fullWidth
-                  label="Country"
-                  margin="dense"
-                  name="country"
-                  variant="outlined"
-                  value={user.country}
-                  onChange={handleChange}
-                />
-              </Grid>
+                  value={user.partnerSchools.join(", ")}
+                /> 
+              </Grid>) : "" }
             </Grid>
           </CardContent>
           <Divider />

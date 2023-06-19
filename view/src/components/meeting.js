@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { makeStyles } from '@material-ui/core/styles';
 import { DialogTitle, DialogContent } from '@material-ui/core';
 import Typography from '@material-ui/core/Typography';
@@ -13,13 +13,12 @@ import CloseIcon from '@material-ui/icons/Close';
 import Slide from '@material-ui/core/Slide';
 import TextField from '@material-ui/core/TextField';
 import Grid from '@material-ui/core/Grid';
+import Box from '@material-ui/core/Box';
 import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import CardContent from '@material-ui/core/CardContent';
-
-import MuiDialogTitle from '@material-ui/core/DialogTitle';
-import MuiDialogContent from '@material-ui/core/DialogContent';
+import OpenInNewIcon from '@material-ui/icons/OpenInNew';
 
 import axios from 'axios';
 import dayjs from 'dayjs';
@@ -29,7 +28,7 @@ import { authMiddleWare } from '../util/auth';
 const useStyles = makeStyles((theme) => ({
   content: {
     flexGrow: 1,
-    padding: theme.spacing(3)
+    padding: theme.spacing(3),
   },
   appBar: {
     position: 'relative'
@@ -63,10 +62,11 @@ const useStyles = makeStyles((theme) => ({
   bullet: {
     display: 'inline-block',
     margin: '0 2px',
-    transform: 'scale(0.8)'
+    transform: 'scale(0.8)',
   },
   pos: {
-    marginBottom: 12
+    marginBottom: 9,
+    paddingLeft: 9
   },
   uiProgess: {
     position: 'fixed',
@@ -81,6 +81,7 @@ const useStyles = makeStyles((theme) => ({
   },
   viewRoot: {
     margin: 0,
+    width: '600px',
     padding: theme.spacing(2)
   },
   closeButton: {
@@ -98,8 +99,8 @@ const Transition = React.forwardRef(function Transition(props, ref) {
 const Meeting = () => {
   const classes = useStyles();
   const navigate = useNavigate();
-  const { id } = useParams();
   const [meetings, setMeetings] = useState([]);
+  const [user, setUser] = useState('')
   const [title, setTitle] = useState('');
   const [link, setLink] = useState('');
   const [meetingId, setMeetingId] = useState('');
@@ -125,8 +126,13 @@ const Meeting = () => {
       try {
         const authToken = localStorage.getItem('AuthToken');
         axios.defaults.headers.common = { Authorization: `${authToken}` };
-        const response = await axios.get('/meetings');
-        setMeetings(response.data);
+
+        const responseMeetings = await axios.get('/meetings');
+        const responseUser = await axios.get('/user');
+
+        setMeetings(responseMeetings.data);
+        setUser(responseUser.data.userCredentials);
+
         setUiLoading(false);
       } catch (error) {
         console.log(error);
@@ -179,6 +185,8 @@ const Meeting = () => {
   const handleSubmit = async (event) => {
     authMiddleWare(navigate);
     event.preventDefault();
+    const link = (await axios.post('create-room')).data.roomUrl
+
     const userMeeting = {
       title: title,
       link: link
@@ -220,6 +228,7 @@ const Meeting = () => {
   const handleClose = (event) => {
     setOpen(false);
   };
+
 
   if (uiLoading) {
     return (
@@ -293,40 +302,44 @@ const Meeting = () => {
             </Grid>
           </form>
         </Dialog>
-
         <Grid container spacing={2}>
           {meetings.map((meeting) => (
             <Grid item xs={12} key={meeting.meetingId}>
-              <Card className={classes.root} variant="outlined">
+              <Card variant="outlined">
                 <CardContent>
-                  <Typography variant="h5" component="h2">
-                    {meeting.title}
-                  </Typography>
+                  <Button style={{textTransform: 'none'}} href={meeting.link} size="large" color="primary" startIcon={<OpenInNewIcon fontSize="small"/>}>
+                    Open {meeting.title} 
+                  </Button>
                   <Typography className={classes.pos} color="textSecondary">
                     {dayjs(meeting.createdAt).fromNow()}
                   </Typography>
-                  <Typography variant="body2" component="p">
-                    {meeting.link}
+                  <Typography className={classes.pos} variant="body2">
+                    Created by: {meeting.email}
                   </Typography>
                 </CardContent>
                 <CardActions>
-                  <Button size="small" color="primary" onClick={() => handleViewOpen({ meeting })}>
+                  {/* <Button
+                    size="small"
+                    color="primary"
+                    onClick={() => handleViewOpen({ meeting })}
+                  >
                     View
-                  </Button>
-                  <Button size="small" color="primary" onClick={() => handleEditClickOpen({ meeting })}>
+                  </Button> */}
+                  <Button
+                    size="small"
+                    color="primary"
+                    disabled={user.email !== meeting.email}
+                    onClick={() => handleEditClickOpen({ meeting })}
+                  >
                     Edit
                   </Button>
                   <Button
                     size="small"
                     color="primary"
+                    disabled={user.email !== meeting.email}
                     onClick={() => deleteMeetingHandler({ meeting })}
-                    disabled={deletingMeetingId === meeting.meetingId} // Disable the button if the meeting is being deleted
                   >
-                    {deletingMeetingId ? (
-                      <CircularProgress size={30} className={classes.progress} />
-                    ) : (
-                      "Delete"
-                    )}
+                    Delete
                   </Button>
                 </CardActions>
               </Card>

@@ -1,26 +1,46 @@
 const { db } = require('../util/admin');
 
 exports.getAllMeetings = (request, response) => {
+  let userData = {};
   db
-    .collection('meetings')
-    .where('username', '==', request.user.username)
-    .orderBy('createdAt', 'desc')
+    .doc(`/users/${request.user.email}`)
     .get()
-    .then((data) => {
-      let meetings = [];
-      data.forEach((doc) => {
-        meetings.push({
-          meetingId: doc.id,
-          title: doc.data().title,
-          link: doc.data().link,
-          createdAt: doc.data().createdAt,
-        });
-      });
-      return response.json(meetings);
+    .then((doc) => {
+      if (doc.exists) {
+        // get partner schools
+        userData.userCredentials = doc.data();
+        let schools = [request.user.email]
+        if (userData.userCredentials.partnerSchools) {
+          schools = schools.concat(userData.userCredentials.partnerSchools)
+        }
+
+        db
+          .collection('meetings')
+          .where('email', 'in', schools)
+          .orderBy('createdAt', 'desc')
+          .get()
+          .then((data) => {
+            let meetings = [];
+            data.forEach((doc) => {
+              meetings.push({
+                meetingId: doc.id,
+                title: doc.data().title,
+                link: doc.data().link,
+                email: doc.data().email,
+                createdAt: doc.data().createdAt,
+              });
+            });
+            return response.json(meetings);
+          })
+          .catch((err) => {
+            console.error(err);
+            return response.status(500).json({ error: err.code });
+          });
+      }
     })
-    .catch((err) => {
-      console.error(err);
-      return response.status(500).json({ error: err.code });
+    .catch((error) => {
+      console.error(error);
+      return response.status(500).json({ error: error.code });
     });
 };
 
@@ -37,9 +57,10 @@ exports.postOneMeeting = (request, response) => {
   const newMeetingItem = {
     title: request.body.title,
     link: request.body.link,
-    username: request.user.username,
+    email: request.user.email,
     createdAt: new Date().toISOString()
   }
+
   db
     .collection('meetings')
     .add(newMeetingItem)
@@ -65,7 +86,7 @@ exports.deleteMeeting = (request, response) => {
           error: 'Meeting not found'
         })
       }
-      if (doc.data().username !== request.user.username) {
+      if (doc.data().email !== request.user.email) {
         return response.status(403).json({ error: "UnAuthorized" })
       }
       return document.delete();
