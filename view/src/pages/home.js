@@ -5,7 +5,6 @@ import axios from 'axios';
 import Account from '../components/account';
 import Meeting from '../components/meeting';
 
-import '../newStyle.css';
 import Drawer from '@material-ui/core/Drawer';
 import AppBar from '@material-ui/core/AppBar';
 import CssBaseline from '@material-ui/core/CssBaseline';
@@ -24,6 +23,8 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 
 import { authMiddleWare } from '../util/auth';
 import { makeStyles } from '@material-ui/core/styles';
+
+import '../newStyle.css';
 
 const drawerWidth = 240;
 
